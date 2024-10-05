@@ -12,8 +12,13 @@ export const getUser = createAsyncThunk(
           Authorization: `Bearer ${token}`
         }
       });
+      if (!response.data){
+        throw new Error("Invalid User !")
+      }
       return response.data;
     } catch (error) {
+      console.log("==================")
+      console.log(error)
       return rejectWithValue(error.response.data);
     }
   }

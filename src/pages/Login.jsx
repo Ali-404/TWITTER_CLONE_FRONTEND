@@ -15,14 +15,13 @@ export default function Login() {
   const [serverError,setServerError] = useState(null)
 
   useEffect(() => {
-    if (isAuthenticated){
+    if (isAuthenticated == true){
       navigation("/")
-      return
+      
     }
   }, [isAuthenticated, navigation])
 
 
-   if (isAuthenticated) return null
 
 
     
@@ -54,6 +53,7 @@ export default function Login() {
         
       }catch(e) {
         const errorMessage =e.response.data.error ?? e.message 
+        console.log(errorMessage)
         setServerError(errorMessage)      
       }
 
@@ -63,7 +63,7 @@ export default function Login() {
     return (
       <div className="bg-slate-200 min-h-screen flex">
 
-        <div className="hidden md:block bg-[url(images/img1.jpg)] bg-cover bg-center   flex-[0.7] shadow-xl" ></div>
+        <div className="hidden md:block bg-[url(images/img2.jpg)] bg-cover bg-center   flex-[0.7] shadow-xl" ></div>
 
         <div className="flex-1 flex flex-col items-center gap-4 py-8 justify-center">
             <h1 className="text-center text-4xl ">TWITTER CLONE - <b>LOGIN</b> </h1>
@@ -110,7 +110,7 @@ export default function Login() {
                 <div className="text-red-400 text-center"> {serverError}</div>
               )}
 
-              <label className="text-l flex items-center justify-center gap-2" >First time here? <Link to={"/register"} className={`${buttonClass} bg-blue-300 hover:bg-blue-400 `}>Create Account</Link></label>
+              <label className="text-l flex items-center justify-center gap-2" >First time here? <Link to={"/register"} className={`${buttonClass} bg-orange-300 hover:bg-orange-400 `}>Create Account</Link></label>
 
 
             </form>

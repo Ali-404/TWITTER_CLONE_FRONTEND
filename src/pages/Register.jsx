@@ -184,7 +184,7 @@ export default function Register() {
 
 
 
-              <button disabled={formState.isSubmitting} type="submit" className={`${buttonClass}`} >
+              <button disabled={formState.isSubmitting} type="submit" className={`${buttonClass} bg-orange-300 hover:bg-orange-400`} >
                 {formState.isSubmitting ? "Loading ..." : "SIGN UP "}
               </button>
 
