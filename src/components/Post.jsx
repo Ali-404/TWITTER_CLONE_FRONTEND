@@ -1,5 +1,6 @@
+/* eslint-disable react/prop-types */
 import { useEffect, useRef, useState } from "react";
-import { buttonClass, inputClass } from "../data/classes";
+import {  inputClass } from "../data/classes";
 import TextAreaWithEllipsis from "./TextAreaWithEllips";
 import UserProfileImg from "./UserProfileImg";
 import axiosClient, { getUserById } from "../axios";

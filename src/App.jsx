@@ -3,7 +3,7 @@ import { RouterProvider } from "react-router-dom";
 import routes from "./routes";
 import { useEffect } from "react";
 import { getUser, login, logout } from "./features/authSlice";
-import { createTheme, ThemeProvider } from "@mui/material";
+import { CircularProgress, createTheme, ThemeProvider } from "@mui/material";
 
 export default function App() {
 
@@ -40,7 +40,7 @@ export default function App() {
         }
     }, [dispatch])
 
-    if (status == "loading")return null
+    if (status == "loading")return <CircularProgress />
 
 
   return (

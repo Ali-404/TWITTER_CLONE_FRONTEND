@@ -1,7 +1,7 @@
 import Textarea from 'react-expanding-textarea'
 import {buttonClass} from '../data/classes'
 import Post from './Post'
-import { useCallback, useEffect, useState } from 'react'
+import {  useEffect, useState } from 'react'
 import axiosClient from '../axios'
 import UserProfileImg from './UserProfileImg'
 import { useSelector } from 'react-redux'
@@ -80,8 +80,9 @@ export default function PostsView() {
   const [nextDataExists, setNextDataExists] = useState(true);
 
   const loadPosts = async (firstTime = false) => {
-
+    
     try {
+      setLoading(true)
       const res = await axiosClient.get("/posts", {
         params: { 
           page: currentPage
@@ -104,6 +105,7 @@ export default function PostsView() {
       console.error(err);
     }finally{
       setCurrentPage((prev) => prev + 1)
+      setLoading(false)
     }
   }
 
@@ -118,6 +120,9 @@ export default function PostsView() {
     <div className="flex-1 flex items-center flex-col md:p-6 gap-4 overflow-auto">
       <UserWrite loadPosts={loadPosts} />
 
+      {loading && (
+        <CircularProgress />
+      )  }
       {/* container */}
       {posts && posts.sort((p1,p2) => new Date(p2.createdAt) - new Date(p1.createdAt)  ).map((post, key) => (
         <Post postData={post} key={key}  />
