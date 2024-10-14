@@ -47,16 +47,21 @@ export default function Post({postData}) {
   }
 
   const incrementViews = async () => {
-    await axiosClient.post("vues/add",{
-      postId:postData.id,
-      viewerId:user.id
-    },{
-      headers:{
-        Authorization: `Bearer ${localStorage.getItem("accessToken")}`
-      }
-    }).then((res) => {
-      setVues((prev) => [...prev,res.data])
-    }).catch(e => console.warn(e))
+    try {
+
+      const res = await axiosClient.post("vues/add",{
+        postId:postData.id,
+        viewerId:user.id
+      },{
+        headers:{
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`
+        }
+      })
+        setVues((prev) => [...prev,res.data])
+      
+    }catch(e){
+      console.log(e)
+    }
   }
 
 
@@ -84,6 +89,22 @@ export default function Post({postData}) {
     }).catch(e => console.error(e))
   }
 
+
+  const removeComment = async (commentID) => {
+    try {
+      const result = await axiosClient.delete(`comments/comment/delete/${commentID}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`
+        }
+      })
+      if (result.data){
+        // 
+        setComments((prev) => prev.filter(c => c.id != commentID))
+      }
+    }catch(e){
+      console.error(e)
+    }
+  }
   
  
 
@@ -223,7 +244,7 @@ export default function Post({postData}) {
           <>
           
             <>
-            {comments.map((comment,k) => <Comment key={k} client={user} commentData={comment} />)}
+            {comments.map((comment,k) => <Comment removeComment={removeComment} key={k} client={user} commentData={comment} />)}
             
             </>
         
@@ -273,7 +294,11 @@ const UserCommentInput = ({createComment}) => {
 }
 
 
-const Comment = ({commentData, client}) => {
+const Comment = ({commentData, client, removeComment}) => {
+
+  
+
+
   const commentUser = commentData?.user
   return (
     <div className="flex gap-4 py-5 ">
@@ -292,7 +317,7 @@ const Comment = ({commentData, client}) => {
           {/* spacer */}
           <div className="flex-1"></div>
           {commentUser.id == client.id && (
-          <button >
+          <button onClick={async () => await removeComment(commentData.id)} >
             <i  className="material-icons text-md text-orange-300">delete</i>
           </button>
           )}
