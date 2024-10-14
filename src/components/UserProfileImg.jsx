@@ -1,14 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // eslint-disable-next-line react/prop-types
 export default function UserProfileImg({ url = "invalid-url", w = "40px", h = "40px", letter = "A", letterSize="15px" }) {
   const [failed, setFailed] = useState(false);
   
+
+  useEffect(() => {
+    if (typeof(url) != "string"){
+      setFailed(true);
+    }
+  }, [url])
+  
   if (!failed) {
     return (
   
       <img
-        src={toString(url)}
+        src={url}
         className={`rounded-full object-cover object-center`}
         style={{ width: w, height: h }}
         onError={(e) =>{e.currentTarget.onerror = null; setFailed(true)}}

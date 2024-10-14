@@ -3,8 +3,29 @@ import { RouterProvider } from "react-router-dom";
 import routes from "./routes";
 import { useEffect } from "react";
 import { getUser, login, logout } from "./features/authSlice";
+import { createTheme, ThemeProvider } from "@mui/material";
 
 export default function App() {
+
+
+    const theme = createTheme({
+        palette: {
+          primary: {
+            // light: '#757ce8',
+            main: '#FED7AA',
+            // dark: '#002884',
+            contrastText: '#181621',
+          },
+        //   secondary: {
+        //     light: '#ff7961',
+        //     main: '#f44336',
+        //     dark: '#ba000d',
+        //     contrastText: '#000',
+        //   },
+        },
+      });
+
+
     const dispatch = useDispatch()
     const {  status } = useSelector(state => state.auth);
     useEffect(() => {
@@ -23,7 +44,9 @@ export default function App() {
 
 
   return (
+    <ThemeProvider theme={theme} >
       <RouterProvider router={routes}  >
       </RouterProvider>
+    </ThemeProvider>
   )
 }

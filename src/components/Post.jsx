@@ -3,7 +3,7 @@ import { buttonClass, inputClass } from "../data/classes";
 import TextAreaWithEllipsis from "./TextAreaWithEllips";
 import UserProfileImg from "./UserProfileImg";
 import axiosClient, { getUserById } from "../axios";
-import { formatDate } from "../data/usefull";
+import { formatDate, timeAgo } from "../data/usefull";
 import { useSelector } from "react-redux";
 
 export default function Post({postData}) {
@@ -18,7 +18,32 @@ export default function Post({postData}) {
   const [comments, setComments ] = useState([])
   const [likes, setLikes ] = useState([])
 
+  const [isLikedByClient, setIsLikedByClient] = useState(false)
+
   const postRef = useRef(null)
+
+  const likeFunc = async () => {
+    await axiosClient.post(`/likes/like/${postData.id}`, {
+      likerId: user.id 
+    }, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`
+      }
+    }).then(res => {
+      const theLike  = res.data.like
+      if (typeof(theLike) == "object" ){
+        setLikes(prev => [...prev, theLike])
+        setIsLikedByClient(true)
+
+      }else {
+        setIsLikedByClient(false)
+        // fix prob here
+
+        setLikes(prev => prev.filter(l =>  l.likerId != user.id))
+      }
+
+    }).catch(e => console.error(e))
+  }
 
   const incrementViews = async () => {
     await axiosClient.post("vues/add",{
@@ -30,79 +55,109 @@ export default function Post({postData}) {
       }
     }).then((res) => {
       setVues((prev) => [...prev,res.data])
+    }).catch(e => console.warn(e))
+  }
+
+
+  const createComment = async (commentContent) => {
+    await axiosClient.post("comments/comment/add", {
+      postId: postData.id,
+      content: commentContent
+    },{
+      headers:{
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`
+      }
+    }).then(res => {
+     
+      setComments(prev => [...prev, res.data.comment])
     }).catch(e => console.error(e))
   }
- 
 
-  useEffect(() => {
-    // get poster data
-    getUserById(postData.posterId).then(res => {
-      setPoster(res.data)
-
-    })
-    
-    // get vues
-    const vuesLoadFunc = () => { axiosClient.get(`/vues/${postData.id}`, {
+  const loadComments = async () => {
+    await axiosClient.get(`/comments/${postData.id}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("accessToken")}`
       }
-    }).then((res) => {
-      if (Array.isArray(res.data)) {
-
-        setVues(res.data ?? [])
-      }
-    })
+    }).then(res => {
+      setComments(res.data ?? []);
+    }).catch(e => console.error(e))
   }
 
+  
+ 
 
-    vuesLoadFunc()
+  useEffect(() => {
+    let hasBeenViewed = false;
+  
+    // Load poster and likes as before
+    getUserById(postData.posterId).then(res => setPoster(res.data));
 
+
+
+    axiosClient.get(`/vues/${postData.id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`
+      }
+    }).then(res => setVues(res.data ?? []));
     
+    axiosClient.get(`/likes/${postData.id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`
+      }
+    }).then(res => {
+      const clientLikes = res.data.filter(like => like.likerId == user.id) ?? [];
+      setIsLikedByClient(clientLikes.length > 0);
+      setLikes(res.data ?? []);
+    });
 
+
+    // load comments
+    loadComments()
+  
     // ================================= VUES COUNTER OBSERVER
-
-
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            // setVu((prevViews) => prevViews + 1);
-            // increment here in post request if its not alreay vued
-              incrementViews()
-
-            // You can disconnect the observer if you only want to count once
-            observer.disconnect();
+          if (entry.isIntersecting && !hasBeenViewed) {
+            incrementViews();
+            hasBeenViewed = true; // Prevent multiple increments
+            observer.disconnect(); // Disconnect after incrementing
           }
         });
       },
       { threshold: 0.5 } // The element must be 50% visible in the viewport
     );
-    const currentEl = postRef.current 
+  
+    const currentEl = postRef.current;
     if (currentEl) {
       observer.observe(currentEl);
     }
-
-    // Clean up the observer when the component is unmounted
+  
+    // Clean up observer
     return () => {
       if (currentEl) {
         observer.unobserve(currentEl);
       }
     };
-    
-
-  }, [postData.posterId,postData.id,user.id])
+  }, [postData.posterId, postData.id, user.id]);
 
   if (!poster) return <div>Loading ...</div>
 
   return (
-    <div onClick={incrementViews} className="p-4  rounded-md shadow-md bg-slate-50 flex flex-col  w-[95%] md:w-[60%] gap-4" ref={postRef}>
+    <div onMouseEnter={incrementViews} className="p-4  rounded-md shadow-md bg-slate-50 flex flex-col  w-[95%] md:w-[60%] gap-4" >
 
       <div className="flex gap-2">
-      <UserProfileImg url={poster.profile_img} letter={poster.username[0]} />
+            
+            <UserProfileImg url={poster.profile_img} letter={poster.username[0]} />
      
 
-            <div className="text-sm flex flex-col items-start">
-                <h1>{poster.firstName ? poster.firstName + " " + poster.lastName : "@"+poster.username}  </h1>
+            <div className="text-sm flex flex-col items-start" ref={postRef}>
+            {user.username != poster.username ? (
+              <h1>{poster.firstName ? poster.firstName + " " + poster.lastName : "@"+poster.username}  </h1>
+
+            ) : (
+              <h1>You</h1>
+            )}
                 <small className="text-orange-400">{formatDate(postData.createdAt)} </small>
             </div>
 
@@ -114,7 +169,7 @@ export default function Post({postData}) {
       {/* <img src="https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcS-_ycPMliqwjkLSNXt6aMeqPUvYxmz2NJ_PwgLJXxNuuEkQN8H5VApnN0r_vX3KMwMpebw3_EA5sNJHAo" className="w-[100%] object-contain rounded-md shadow" /> */}
 
       <TextAreaWithEllipsis text={postData.content} />
-     
+            
 
       <hr className="w-full" /> 
       </div>
@@ -123,18 +178,18 @@ export default function Post({postData}) {
         {/* tools */}
       <div className="flex items-center gap-4 text-sm justify-between"> 
             <div className="flex items-center gap-2">
-                <span className="flex items-center text-center gap-1 text-emerald-400">
-                    <button className="material-icons text-emerald-400">
-                        favorite_outline
+                <span className={`flex items-center text-center gap-1 ${isLikedByClient ? "text-orange-500" : "text-emerald-300"}`}>
+                    <button onClick={likeFunc} className={`material-icons `}>
+                        {isLikedByClient ? "favorite" : "favorite_outline" }
                     </button>
-                    10M
+                    {likes.length ?? 0}
                 </span>
 
                 <span className="flex items-center text-center gap-1 text-emerald-400">
-                    <button className="material-icons text-emerald-400">
+                    <button onClick={() => setCommentShowns(o => !o)} className="material-icons text-emerald-400">
                         comment
                     </button>
-                    5M
+                    {comments.length ?? 0}
                  </span>
 
         </div>
@@ -153,27 +208,38 @@ export default function Post({postData}) {
       </div>
         
       <div className="max-h-[400px] flex flex-col overflow-auto p-3">
-        <div className="text-lg flex items-center gap-2"><h1>Comments</h1> <button onClick={() => setCommentShowns(o => !o)} className="material-icons">visibility{ commentsShown && "_off" }</button> </div>
+        <div className="text-sm flex items-center gap-2"><h5>Comments</h5> <button onClick={() => setCommentShowns(o => !o)} className="material-icons text-sm">visibility{ !commentsShown && "_off" }</button> </div>
         <hr />
         
         {commentsShown && (
-          <UserCommentInput />
+          <UserCommentInput createComment={createComment} />
         )}
-        
-        
         
         
         {commentsShown && (
           <>
-          <Comment />
-          <Comment />
-          <Comment />
-          <Comment />
+          {comments && comments.length > 0 ? (
+          <>
+          
+            <>
+            {comments.map((comment,k) => <Comment key={k} client={user} commentData={comment} />)}
+            
+            </>
+        
+          
+          
           </>
-        ) }
-        {commentsShown && (
-        <button className={buttonClass + " border bg-transparent p-0"} > Load More</button>
+        )
+
+          : (
+            <div className="text-center text-sm">There is no comment here yet.</div>
+          )
+
+        } 
+          </>
         )}
+        
+        
 
       </div>
     </div>
@@ -184,39 +250,54 @@ export default function Post({postData}) {
 
 
 // extra components
-const UserCommentInput = () => {
+const UserCommentInput = ({createComment}) => {
+  const {user} = useSelector(state => state.auth)
+  const inputRef = useRef(null)
+
+  const onSubmit = async (e) => {
+    e.preventDefault()
+    const content = inputRef.current.value
+    await createComment(content)
+    inputRef.current.value = ""
+    return false
+  }
+
   return (
-    <div className="flex gap-4 py-5">
+    <form onSubmit={onSubmit}  className="flex gap-4 py-5">
       
-      <img src="https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcSFUDYpxDZeOMsExGN-IlyQ2VoLjYLNUHMQVnr3kuvagF0QcqxTVspw46v4bdjCsMWOuYnnuA_g8D6XUNMkhNLAOb8BiyI0308d0SXtDVQ" className=" min-w-[40px] max-w-[40px] h-[40px] rounded-full  object-cover object-center"  />
-      <input className={inputClass + " border-none placeholder:text-sm" } placeholder="Add you comment .."  />
-    </div>
+      <UserProfileImg url={user.profile_img} letter={user.username[0]} w="44px" />
+      <input ref={inputRef}  required className={inputClass + " border-none placeholder:text-sm" } placeholder="Add you comment .."  />
+    </form>
   )
 }
 
 
-const Comment = () => {
+const Comment = ({commentData, client}) => {
+  const commentUser = commentData?.user
   return (
     <div className="flex gap-4 py-5 ">
       
-      <img src="https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcSFUDYpxDZeOMsExGN-IlyQ2VoLjYLNUHMQVnr3kuvagF0QcqxTVspw46v4bdjCsMWOuYnnuA_g8D6XUNMkhNLAOb8BiyI0308d0SXtDVQ" className=" min-w-[40px] max-w-[40px] h-[40px] rounded-full  object-cover object-center "  />
-     
+      <UserProfileImg url={commentUser.profile_img} letter={commentUser.username[0]} w="40px" />
      
      <div>
      {/* infos */}
         <div className="flex gap-2 items-center">
-          <span className="font-bold">Cristiano Ronaldo</span>
-          <small className="bg-orange-200 rounded-md shadow-md px-1 italic opacity-70">4h ago</small>
+        {commentUser.id != client.id ? (
+          <span className="font-bold">{commentUser.firstName ? commentUser.firstName + " " + commentUser.lastName : "@" + commentUser.username}</span>
+          
+        ) : (<span className="font-bold">YOU</span>) }
+          <small className="bg-orange-200 rounded-md shadow-md px-1 italic opacity-70">{timeAgo(commentData.createdAt)}</small>
           
           {/* spacer */}
           <div className="flex-1"></div>
-          
+          {commentUser.id == client.id && (
           <button >
             <i  className="material-icons text-md text-orange-300">delete</i>
           </button>
+          )}
         </div>
         {/* comment */}
-        <p className="text-sm">Est aliqua aliquip est pariatur voluptate minim ut anim.Magna deserunt voluptate exercitation sunt enim deserunt reprehenderit.Amet deserunt exercitation sunt officia labore aliquip esse proident.</p>
+        <p className="text-sm">{commentData.content}</p>
      </div>
 
 
