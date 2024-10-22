@@ -5,6 +5,7 @@ import { logout } from "../features/authSlice"
 import { useNavigate } from "react-router-dom"
 import UserProfileImg from "./UserProfileImg"
 import { Button } from "@mui/material"
+import InfosChangeDialog from "./InfosChangeDialog"
 
 
 
@@ -16,6 +17,7 @@ export default function SideMenu(props)  {
   const navigation = useNavigate()
   const {user} = useSelector((state) => state.auth)
 
+  const [changeInfosFormShown, setChangeInfosFormShown] = useState(false)
 
 
  
@@ -35,6 +37,7 @@ export default function SideMenu(props)  {
       <span className="material-icons">menu</span>
       </button>
 
+      <InfosChangeDialog user={user} open={changeInfosFormShown} onClose={() => setChangeInfosFormShown(false)} />
      
       <motion.div {...props} className={` ${!isMenuShown && "hidden"} bg-slate-50 md:bg-transparent h-[100vh] md:h-auto absolute md:relative   md:flex p-4 *:w-full *:flex *:flex-col *:items-center  flex-[0.2] min-w-[300px]  flex-col items-center gap-2 z-50`}>
         <div >
@@ -43,14 +46,14 @@ export default function SideMenu(props)  {
           <h4 className="text-emerald-600">@{user.username}</h4>
           <h4 className="text-emerald-600">{user.email}</h4>
           <hr className="w-full my-5" />
-          
-            {user.description &&   <p>{user.description}</p> }
+            <p className="text-start w-full opacity-60">📝Description:</p>
+            {user.description &&   <p className="w-full">{user.description}</p> }
         </div>
 
         {/* buttons */}
         <div className="flex-1 items-end justify-end gap-1">
         
-          <Button variant="contained" className="w-full"  > Change Information</Button>
+          <Button variant="contained" className="w-full" onClick={() => setChangeInfosFormShown(true)} > Change Information</Button>
           <Button variant="contained" className="w-full"  onClick={logoutFunc}  >Logout</Button>
         </div>
       </motion.div>

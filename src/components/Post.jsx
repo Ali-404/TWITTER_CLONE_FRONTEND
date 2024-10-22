@@ -4,10 +4,14 @@ import {  inputClass } from "../data/classes";
 import TextAreaWithEllipsis from "./TextAreaWithEllips";
 import UserProfileImg from "./UserProfileImg";
 import axiosClient, { getUserById } from "../axios";
-import { formatDate, timeAgo } from "../data/usefull";
+import { formatDate, readBlobAsDataURL, timeAgo } from "../data/usefull";
 import { useSelector } from "react-redux";
+import { CircularProgress, IconButton } from "@mui/material";
+import Dialog from "./Dialog";
 
-export default function Post({postData}) {
+
+
+export default function Post({postData, setPosts}) {
 
   const {  user } = useSelector((state) => state.auth)
 
@@ -21,7 +25,33 @@ export default function Post({postData}) {
 
   const [isLikedByClient, setIsLikedByClient] = useState(false)
 
+  const [files, setFiles] = useState([])
+
   const postRef = useRef(null)
+
+  const loadFiles = async () => {
+    const response = await axiosClient.get(`/files/${postData.id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`
+      }
+    })
+
+    if (response.data){
+      let files = response.data.map(async f => {
+        const res = await axiosClient.get(`files/file/${f.id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          },
+          responseType: "blob"
+        })
+        if (res.data){
+          const url = await readBlobAsDataURL(res.data)
+          return {...f, file: url}
+        }
+      })
+      setFiles(await Promise.all(files));
+    }
+  }
 
   const likeFunc = async () => {
     await axiosClient.post(`/likes/like/${postData.id}`, {
@@ -60,7 +90,10 @@ export default function Post({postData}) {
         setVues((prev) => [...prev,res.data])
       
     }catch(e){
-      console.log(e)
+      if (e?.data?.message != "Already viewed !"){
+
+        console.log(e)
+      }
     }
   }
 
@@ -110,6 +143,8 @@ export default function Post({postData}) {
 
   useEffect(() => {
     let hasBeenViewed = false;
+
+    loadFiles()
   
     // Load poster and likes as before
     getUserById(postData.posterId).then(res => setPoster(res.data));
@@ -139,9 +174,9 @@ export default function Post({postData}) {
     // ================================= VUES COUNTER OBSERVER
     const observer = new IntersectionObserver(
       (entries) => {
-        entries.forEach((entry) => {
+        entries.forEach(async (entry) => {
           if (entry.isIntersecting && !hasBeenViewed) {
-            incrementViews();
+            await incrementViews();
             hasBeenViewed = true; // Prevent multiple increments
             observer.disconnect(); // Disconnect after incrementing
           }
@@ -163,18 +198,42 @@ export default function Post({postData}) {
     };
   }, [postData.posterId, postData.id, user.id]);
 
+  const [isDelitingPost, setIsDeletingPost] = useState(false)
+  const deletePost = async () => {
+    try {
+      setIsDeletingPost(true)
+      const res = await axiosClient.delete("posts/delete/" + postData.id,{
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`
+        }
+      })
+      if (res.data){
+        setPosts(prev => [...prev.filter(p => p.id != postData.id)])
+      }
+    }catch(e) {
+      console.warn(e)
+    }finally{
+      setIsDeletingPost(false)
+    }
+  }
+
+  const [isPostDialogOpen, setIsPostDialogOpen] = useState(false)
+
   if (!poster) return <div>Loading ...</div>
 
-  return (
-    <div onMouseEnter={incrementViews} className="p-4  rounded-md shadow-md bg-slate-50 flex flex-col  w-[95%] md:w-[60%] gap-4" >
+  if (isDelitingPost) return <CircularProgress />
 
+  return (
+    <div onMouseEnter={async () => await incrementViews()} className="p-4  rounded-md shadow-md bg-slate-50 flex flex-col  w-[95%] md:w-[60%] gap-4" >
+
+      <Dialog onClose={async (confrm) => {setIsPostDialogOpen(false);if(confrm) await deletePost()}} open={isPostDialogOpen}  />
       <div className="flex gap-2">
             
             <UserProfileImg url={poster.profile_img} letter={poster.username[0]} />
      
 
             <div className="text-sm flex flex-col items-start" ref={postRef}>
-            {user.username != poster.username ? (
+            {user.id != poster.id ? (
               <h1>{poster.firstName ? poster.firstName + " " + poster.lastName : "@"+poster.username}  </h1>
 
             ) : (
@@ -182,6 +241,12 @@ export default function Post({postData}) {
             )}
                 <small className="text-orange-400">{formatDate(postData.createdAt)} </small>
             </div>
+
+            <div className="flex-1"></div>
+            {user.id == poster.id && (
+
+            <IconButton className="material-icons " onClick={() => setIsPostDialogOpen(true)} color="warning">delete</IconButton>
+            )}
 
       </div>
 
@@ -191,7 +256,23 @@ export default function Post({postData}) {
       {/* <img src="https://encrypted-tbn3.gstatic.com/licensed-image?q=tbn:ANd9GcS-_ycPMliqwjkLSNXt6aMeqPUvYxmz2NJ_PwgLJXxNuuEkQN8H5VApnN0r_vX3KMwMpebw3_EA5sNJHAo" className="w-[100%] object-contain rounded-md shadow" /> */}
 
       <TextAreaWithEllipsis text={postData.content} />
-            
+      
+
+      {/* medea */}
+
+      {files.map( (file, k) => {
+       
+        if (file.type == "image")
+        {
+        return <img key={k} src={file.file} />
+
+        }
+        if (file.type == "video") {
+
+        return <video src={file.file} key={k} className="w-full" autoPlay  controls />
+        }
+
+      })}
 
       <hr className="w-full" /> 
       </div>
@@ -224,7 +305,7 @@ export default function Post({postData}) {
         </span>
 
        
-
+              
 
 
       </div>
