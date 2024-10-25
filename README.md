@@ -17,10 +17,8 @@ This is a simple Twitter clone application that allows users to create, read, up
 
 ## Technologies Used
 
-- **Frontend:** HTML, CSS, JavaScript (React.js or any other framework used)
-- **Backend:** Node.js, Express.js
-- **Database:** MongoDB (or any other database used)
-- **Authentication:** JWT (JSON Web Tokens) or session-based authentication
+- **Frontend:** HTML, CSS, JavaScript React.js, Tailwindcss, MUI ...
+- **Authentication:** JWT (JSON Web Tokens)
 - **Version Control:** Git and GitHub
 
 ## Installation
@@ -46,12 +44,12 @@ To get started with the project, follow these steps:
 
 5. **Run the application:**
    ```bash
-   npm start
+   npm run dev
    ```
 
 ## Usage
 
-Once the application is running, you can access it in your web browser at `http://localhost:3000`. 
+Once the application is running, you can access it in your web browser
 
 ### Authentication
 
