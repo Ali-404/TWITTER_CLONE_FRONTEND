@@ -27,12 +27,12 @@ To get started with the project, follow these steps:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/Ali-404/twitter-clone-test.git
+   git clone https://github.com/Ali-404/TWITTER_CLONE_FRONTEND.git
    ```
 
 2. **Navigate to the project directory:**
    ```bash
-   cd twitter-clone-test
+   cd TWITTER_CLONE_FRONTEND
    ```
 
 3. **Install the dependencies:**
