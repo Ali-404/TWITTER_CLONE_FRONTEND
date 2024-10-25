@@ -1,4 +1,4 @@
-# Twitter Clone
+# Twitter Clone (FRONT END)
 ![smartmockups_m2oolz4p](https://github.com/user-attachments/assets/fa8ea0fe-04d4-43cf-899c-550941690734)
 ![smartmockups_m2oompr1](https://github.com/user-attachments/assets/a24e630b-f1f1-4a96-9ef6-4d077a846435)
 ![smartmockups_m2oojm2s](https://github.com/user-attachments/assets/926f2b0a-6ed1-47be-8b02-b2c30ff18165)
