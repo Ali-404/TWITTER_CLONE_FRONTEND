@@ -47,7 +47,7 @@ export default function SideMenu(props)  {
           <h4 className="text-emerald-600">{user.email}</h4>
           <hr className="w-full my-5" />
             <p className="text-start w-full opacity-60">📝Description:</p>
-            {user.description &&   <p className="w-full">{user.description}</p> }
+            {user.description &&   <pre className="w-full">{user.description}</pre> }
         </div>
 
         {/* buttons */}

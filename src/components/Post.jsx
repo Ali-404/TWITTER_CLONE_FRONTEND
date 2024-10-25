@@ -404,7 +404,7 @@ const Comment = ({commentData, client, removeComment}) => {
           )}
         </div>
         {/* comment */}
-        <p className="text-sm">{commentData.content}</p>
+        <pre className="text-sm">{commentData.content}</pre>
      </div>
 
 
