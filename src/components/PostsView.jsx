@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Textarea from 'react-expanding-textarea';
 import { Button, CircularProgress } from '@mui/material';
 import { useSelector } from 'react-redux';
